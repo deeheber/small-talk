@@ -26,6 +26,10 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 - Caching service - likely [Momento](https://www.gomomento.com/)
 - Frontend - TBD (Likely React or Flutter web)
 
+## Architecture
+
+TODO: Add architecture diagram and/or Step Function workflow diagram here
+
 ## Release plan
 
 - [ ] v1.0.0 - CLI app that generates small talk based on a location that a user inputs
