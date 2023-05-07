@@ -1,3 +1,4 @@
+// TODO: write tests once infra is in place
 // import * as cdk from 'aws-cdk-lib';
 // import { Template } from 'aws-cdk-lib/assertions';
 // import * as SmallTalk from '../lib/small-talk-stack';

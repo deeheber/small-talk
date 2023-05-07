@@ -1,4 +1,10 @@
-import { CfnOutput, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib'
+import {
+  CfnOutput,
+  Duration,
+  RemovalPolicy,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import {
   StepFunctionsIntegration,
@@ -14,6 +20,8 @@ import {
   StateMachineType,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
+import { Architecture, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 
 export class SmallTalkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -21,6 +29,40 @@ export class SmallTalkStack extends Stack {
     const stack = Stack.of(this)
 
     // Step Function stuff
+    const weatherFunction = new NodejsFunction(
+      this,
+      `${stack}-weatherFunction`,
+      {
+        functionName: `${stack}-weatherFunction`,
+        runtime: Runtime.NODEJS_18_X,
+        entry: 'dist/src/functions/weather.js',
+        logRetention: RetentionDays.ONE_WEEK,
+        architecture: Architecture.ARM_64,
+        timeout: Duration.seconds(10),
+        memorySize: 3008,
+      }
+    )
+
+    const hackerNewsFunction = new NodejsFunction(
+      this,
+      `${stack}-hackerNewsFunction`,
+      {
+        functionName: `${stack}-hackerNewsFunction`,
+        runtime: Runtime.NODEJS_18_X,
+        entry: 'dist/src/functions/hacker-news.js',
+        logRetention: RetentionDays.ONE_WEEK,
+        architecture: Architecture.ARM_64,
+        timeout: Duration.seconds(10),
+        memorySize: 3008,
+      }
+    )
+
+    /**
+     * TODO:
+     * - wire these functions into the SF as a parallel state
+     * - finish up the SF
+     *  */
+
     const logGroup = new LogGroup(this, `${stack}-stateMachineLog`, {
       logGroupName: `${stack}-stateMachineLog`,
       retention: RetentionDays.ONE_WEEK,
