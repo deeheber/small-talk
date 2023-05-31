@@ -7,7 +7,7 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 ## Channels
 
 1. Weather - [OpenWeather](https://openweathermap.org/api)
-2. News - [Hackernews](https://news.ycombinator.com/) (most news APIs aren't good or cost $$$)
+2. News - [Hackernews](https://news.ycombinator.com/) (most news APIs aren't good or cost $)
 
 **Other channel ideas are welcome! Feel free to submit an [issue](https://github.com/deeheber/small-talk/issues) with your idea.**
 
