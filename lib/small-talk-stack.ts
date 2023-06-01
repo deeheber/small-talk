@@ -15,20 +15,23 @@ import {
 import {
   Chain,
   LogLevel,
+  Parallel,
   Pass,
   StateMachine,
   StateMachineType,
+  TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 import { Architecture, Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
+import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 
 export class SmallTalkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
     const stack = Stack.of(this)
 
-    // Step Function stuff
+    // Step Function Lambda Invoke Functions
     const weatherFunction = new NodejsFunction(
       this,
       `${stack}-weatherFunction`,
@@ -57,12 +60,45 @@ export class SmallTalkStack extends Stack {
       }
     )
 
-    /**
-     * TODO:
-     * - wire these functions into the SF as a parallel state
-     * - finish up the SF
-     *  */
+    // Step Function Definition
+    const parallel = new Parallel(this, 'Parallel')
 
+    const getWeather = new LambdaInvoke(this, 'Check current weather', {
+      lambdaFunction: weatherFunction,
+      payload: TaskInput.fromJsonPathAt('$'),
+      comment: 'Get current weather using external API',
+      resultSelector: { 'weather.$': '$.Payload' },
+    })
+      .addRetry({
+        maxAttempts: 3,
+        backoffRate: 2,
+      })
+      .addCatch(new Pass(this, 'Handle Weather Failure'), {
+        resultPath: '$.weather',
+      })
+
+    const getTechNews = new LambdaInvoke(this, 'Get Tech News', {
+      lambdaFunction: hackerNewsFunction,
+      payload: TaskInput.fromJsonPathAt('$'),
+      comment: 'Scrape tech news from Hacker News website',
+      resultSelector: { 'techNews.$': '$.Payload' },
+    })
+      .addRetry({
+        maxAttempts: 3,
+        backoffRate: 2,
+      })
+      .addCatch(new Pass(this, 'Handle Tech News Failure'), {
+        resultPath: '$.techNews.techNews',
+      })
+
+    parallel.branch(getWeather)
+    parallel.branch(getTechNews)
+
+    const definition = Chain.start(parallel).next(
+      new Pass(this, 'Combine Results')
+    )
+
+    // Step Function general stuff
     const logGroup = new LogGroup(this, `${stack}-stateMachineLog`, {
       logGroupName: `${stack}-stateMachineLog`,
       retention: RetentionDays.ONE_WEEK,
@@ -76,7 +112,7 @@ export class SmallTalkStack extends Stack {
         includeExecutionData: true,
         level: LogLevel.ALL,
       },
-      definition: Chain.start(new Pass(this, 'Pass')),
+      definition,
     })
 
     // API Gateway stuff

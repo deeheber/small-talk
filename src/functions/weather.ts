@@ -1,9 +1,8 @@
 export const handler = async (event: any = {}): Promise<any> => {
   console.log(event)
   // TODO: actually write the code for this function
-
+  // https://github.com/deeheber/small-talk/issues/4
   return {
-    statusCode: 200,
-    body: 'Weather function response',
+    Body: 'Weather function response',
   }
 }
