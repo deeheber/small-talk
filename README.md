@@ -1,7 +1,5 @@
 # small-talk
 
-Coming soon ™️
-
 An app to generate small talk for those who hate small talk. Helpful for those who are socially awkward, or just want to avoid it. Could also be helpful to workers who need to communicate with coworkers who are geographically located in different areas.
 
 ## Channels
@@ -34,7 +32,7 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 ## Release plan
 
-- [ ] v1.0.0 - CLI app that generates small talk based on a location that a user inputs
+- [x] v1.0.0 - CLI app that generates small talk based on a location that a user inputs
 - [ ] v2.0.0 - Web app that generates small talk based on a location that a user inputs
 - [ ] v3.0.0 - Add optional authentication to web app to allow users to save their favorite locations
 
@@ -74,18 +72,11 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 --header 'x-api-key: your-api-key' \
 --header 'Content-Type: application/json' \
 --data '{
-    "something": "here"
+    "location": "Portland, Oregon, US"
 }
-'
-{"body": {
-    "location": "Portland, Oregon, US",
-}`
+'`
 
-4. Alt use Postman or Insomnia
-
-- add `x-api-key` header with your api key
-- add a body with a JSON object with a `location` property
-- `location` should contain {city name},{state code},{country code} (e.g. `Portland, Oregon, US`)
+4. Alt: use [Postman](https://www.postman.com/) or [Insomnia](https://insomnia.rest/)
 
 5. Note: Units of measurement returned are imperial (e.g. Fahrenheit, miles, etc.)
 
@@ -95,9 +86,7 @@ If you want to delete the resources created by this project, run `npm run destro
 
 ### Tests
 
-Coming soon ™️
-
-Command will be `npm run test`.
+`npm run test`.
 
 ## Contributing
 
