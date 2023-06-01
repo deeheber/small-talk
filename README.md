@@ -28,7 +28,10 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 ## Architecture
 
-TODO: Add architecture diagram and/or Step Function workflow diagram here
+### Step Function Workflow Diagram
+<img width="537" alt="small-talk-asl" src="https://github.com/deeheber/small-talk/assets/12616554/fff34b51-e832-4f1d-835b-046f4c7eb4eb">
+
+
 
 ## Release plan
 
