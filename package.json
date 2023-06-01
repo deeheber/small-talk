@@ -15,6 +15,7 @@
     "synth": "npm run cdk synth > template.yaml"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.31",
     "@types/jest": "^29.4.0",
     "@types/node": "18.16.0",
     "aws-cdk": "2.81.0",
@@ -26,7 +27,9 @@
   },
   "dependencies": {
     "aws-cdk-lib": "2.81.0",
+    "cheerio": "^1.0.0-rc.12",
     "constructs": "^10.2.38",
+    "node-fetch": "^3.3.1",
     "source-map-support": "^0.5.21"
   }
 }
