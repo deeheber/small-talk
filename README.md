@@ -86,6 +86,8 @@ If you want to delete the resources created by this project, run `npm run destro
 
 ### Tests
 
+TODO https://github.com/deeheber/small-talk/issues/5
+
 `npm run test`.
 
 ## Contributing
