@@ -29,9 +29,8 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 ## Architecture
 
 ### Step Function Workflow Diagram
+
 <img width="537" alt="small-talk-asl" src="https://github.com/deeheber/small-talk/assets/12616554/fff34b51-e832-4f1d-835b-046f4c7eb4eb">
-
-
 
 ## Release plan
 
@@ -48,11 +47,14 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 ### Deployment
 
-1. Clone the repo
-2. Run `npm install`
-3. Run `export AWS_PROFILE=<your_aws_profile>`
+1. Get an API key from [OpenWeather](https://openweathermap.org/api)
+2. [Create a Secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) in Secrets Manager titled `smalltalk-weather` with a plaintext secret value that is your OpenWeather API key -> Save the secret ARN (will need this for step 4)
+3. Clone the repo
+4. Copy `.env.example` to `.env` and fill in the values
+5. Run `npm install`
+6. Run `export AWS_PROFILE=<your_aws_profile>`
    - Optional if you have a default profile or use `--profile` instead
-4. Run `npm run deploy`
+7. Run `npm run deploy`
 
 ### Using
 
@@ -76,12 +78,16 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 }
 '
 {"body": {
-    "hi": "console"
+    "location": "Portland, Oregon, US",
 }`
 
 4. Alt use Postman or Insomnia
 
 - add `x-api-key` header with your api key
+- add a body with a JSON object with a `location` property
+- `location` should contain {city name},{state code},{country code} (e.g. `Portland, Oregon, US`)
+
+5. Note: Units of measurement returned are imperial (e.g. Fahrenheit, miles, etc.)
 
 ### Cleanup
 

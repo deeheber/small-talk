@@ -12,6 +12,9 @@ import {
   Period,
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
+import { Architecture, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import {
   Chain,
   LogLevel,
@@ -21,10 +24,10 @@ import {
   StateMachineType,
   TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
-import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
-import { Architecture, Runtime } from 'aws-cdk-lib/aws-lambda'
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
+import { config } from 'dotenv'
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
+config()
 
 export class SmallTalkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -43,7 +46,21 @@ export class SmallTalkStack extends Stack {
         architecture: Architecture.ARM_64,
         timeout: Duration.seconds(10),
         memorySize: 3008,
+        layers: [
+          LayerVersion.fromLayerVersionArn(
+            this,
+            'SecretsManagerLayer',
+            process.env.SECRETS_EXTENSION_ARN!
+          ),
+        ],
       }
+    )
+
+    weatherFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [process.env.WEATHER_SECRET_ARN!],
+      })
     )
 
     const hackerNewsFunction = new NodejsFunction(
