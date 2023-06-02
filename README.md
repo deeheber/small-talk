@@ -18,10 +18,10 @@ An app to generate small talk for those who hate small talk. Helpful for those w
   - Step Functions
   - Lambda
   - IAM
-  - Cognito
+  - Cognito (Coming Soon™️)
   - Secrets Manager
   - CDK
-- Caching service - likely [Momento](https://www.gomomento.com/)
+- Caching service - likely [Momento](https://www.gomomento.com/) (Coming Soon™️)
 - Frontend - TBD (Likely React or Flutter web)
 
 ## Architecture
