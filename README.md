@@ -78,7 +78,7 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 4. Alt: use [Postman](https://www.postman.com/) or [Insomnia](https://insomnia.rest/)
 
-5. Note: Units of measurement returned are imperial (e.g. Fahrenheit, miles, etc.)
+5. Note: Units of measurement returned are imperial (e.g. Fahrenheit, miles, etc.). Location should be in format `{city name},{state code},{country code}`. See [OpenWeather docs](https://openweathermap.org/api/geocoding-api) for more info.
 
 ### Cleanup
 
