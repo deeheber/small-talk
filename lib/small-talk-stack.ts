@@ -17,6 +17,7 @@ import { Architecture, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import {
   Chain,
+  DefinitionBody,
   LogLevel,
   Parallel,
   Pass,
@@ -129,7 +130,7 @@ export class SmallTalkStack extends Stack {
         includeExecutionData: true,
         level: LogLevel.ALL,
       },
-      definition,
+      definitionBody: DefinitionBody.fromChainable(definition),
     })
 
     // API Gateway stuff
