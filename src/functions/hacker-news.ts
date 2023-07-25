@@ -1,5 +1,4 @@
 import { load } from 'cheerio'
-import fetch from 'node-fetch'
 
 type Article = {
   rank: number | null
