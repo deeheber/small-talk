@@ -36,6 +36,15 @@ export class SmallTalkStack extends Stack {
     const stack = Stack.of(this)
 
     // Step Function Lambda Invoke Functions
+    const weatherFunctionLog = new LogGroup(
+      this,
+      `${stack}-weatherFunctionLog`,
+      {
+        logGroupName: `${stack}-weatherFunction`,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }
+    )
     const weatherFunction = new NodejsFunction(
       this,
       `${stack}-weatherFunction`,
@@ -43,7 +52,7 @@ export class SmallTalkStack extends Stack {
         functionName: `${stack}-weatherFunction`,
         runtime: Runtime.NODEJS_20_X,
         entry: 'dist/src/functions/weather.js',
-        logRetention: RetentionDays.ONE_WEEK,
+        logGroup: weatherFunctionLog,
         architecture: Architecture.ARM_64,
         timeout: Duration.seconds(10),
         memorySize: 3008,
@@ -56,7 +65,6 @@ export class SmallTalkStack extends Stack {
         ],
       }
     )
-
     weatherFunction.addToRolePolicy(
       new PolicyStatement({
         actions: ['secretsmanager:GetSecretValue'],
@@ -64,6 +72,15 @@ export class SmallTalkStack extends Stack {
       })
     )
 
+    const hackerNewsFunctionLog = new LogGroup(
+      this,
+      `${stack}-hackerNewsFunctionLog`,
+      {
+        logGroupName: `${stack}-hackerNewsFunction`,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }
+    )
     const hackerNewsFunction = new NodejsFunction(
       this,
       `${stack}-hackerNewsFunction`,
@@ -71,7 +88,7 @@ export class SmallTalkStack extends Stack {
         functionName: `${stack}-hackerNewsFunction`,
         runtime: Runtime.NODEJS_20_X,
         entry: 'dist/src/functions/hacker-news.js',
-        logRetention: RetentionDays.ONE_WEEK,
+        logGroup: hackerNewsFunctionLog,
         architecture: Architecture.ARM_64,
         timeout: Duration.seconds(10),
         memorySize: 3008,
@@ -118,7 +135,7 @@ export class SmallTalkStack extends Stack {
 
     // Step Function general stuff
     const logGroup = new LogGroup(this, `${stack}-stateMachineLog`, {
-      logGroupName: `${stack}-stateMachineLog`,
+      logGroupName: `${stack}-stateMachine`,
       retention: RetentionDays.ONE_WEEK,
       removalPolicy: RemovalPolicy.DESTROY,
     })
