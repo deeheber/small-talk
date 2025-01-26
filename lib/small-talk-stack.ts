@@ -41,7 +41,7 @@ export class SmallTalkStack extends Stack {
       `${stack}-weatherFunction`,
       {
         functionName: `${stack}-weatherFunction`,
-        runtime: Runtime.NODEJS_18_X,
+        runtime: Runtime.NODEJS_20_X,
         entry: 'dist/src/functions/weather.js',
         logRetention: RetentionDays.ONE_WEEK,
         architecture: Architecture.ARM_64,
@@ -69,7 +69,7 @@ export class SmallTalkStack extends Stack {
       `${stack}-hackerNewsFunction`,
       {
         functionName: `${stack}-hackerNewsFunction`,
-        runtime: Runtime.NODEJS_18_X,
+        runtime: Runtime.NODEJS_20_X,
         entry: 'dist/src/functions/hacker-news.js',
         logRetention: RetentionDays.ONE_WEEK,
         architecture: Architecture.ARM_64,
