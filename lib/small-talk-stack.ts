@@ -36,27 +36,34 @@ export class SmallTalkStack extends Stack {
     const stack = Stack.of(this)
 
     // Step Function Lambda Invoke Functions
-    const weatherFunction = new NodejsFunction(
+    const weatherFunctionName = `${stack}-weatherFunction`
+    const weatherFunctionLog = new LogGroup(
       this,
-      `${stack}-weatherFunction`,
+      `${weatherFunctionName}-log`,
       {
-        functionName: `${stack}-weatherFunction`,
-        runtime: Runtime.NODEJS_18_X,
-        entry: 'dist/src/functions/weather.js',
-        logRetention: RetentionDays.ONE_WEEK,
-        architecture: Architecture.ARM_64,
-        timeout: Duration.seconds(10),
-        memorySize: 3008,
-        layers: [
-          LayerVersion.fromLayerVersionArn(
-            this,
-            'SecretsManagerLayer',
-            process.env.SECRETS_EXTENSION_ARN!
-          ),
-        ],
+        logGroupName: weatherFunctionName,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
       }
     )
-
+    const weatherFunction = new NodejsFunction(this, weatherFunctionName, {
+      description:
+        'Get current weather using external API for the small talk app',
+      functionName: `${stack}-weatherFunction`,
+      runtime: Runtime.NODEJS_20_X,
+      entry: 'dist/src/functions/weather.js',
+      logGroup: weatherFunctionLog,
+      architecture: Architecture.ARM_64,
+      timeout: Duration.seconds(10),
+      memorySize: 3008,
+      layers: [
+        LayerVersion.fromLayerVersionArn(
+          this,
+          'SecretsManagerLayer',
+          process.env.SECRETS_EXTENSION_ARN!
+        ),
+      ],
+    })
     weatherFunction.addToRolePolicy(
       new PolicyStatement({
         actions: ['secretsmanager:GetSecretValue'],
@@ -64,14 +71,26 @@ export class SmallTalkStack extends Stack {
       })
     )
 
+    const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
+    const hackerNewsFunctionLog = new LogGroup(
+      this,
+      `${hackerNewsFunctionName}-log`,
+      {
+        logGroupName: hackerNewsFunctionName,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }
+    )
     const hackerNewsFunction = new NodejsFunction(
       this,
-      `${stack}-hackerNewsFunction`,
+      hackerNewsFunctionName,
       {
-        functionName: `${stack}-hackerNewsFunction`,
-        runtime: Runtime.NODEJS_18_X,
+        description:
+          'Scrape tech news from Hacker News website for the small talk app',
+        functionName: hackerNewsFunctionName,
+        runtime: Runtime.NODEJS_20_X,
         entry: 'dist/src/functions/hacker-news.js',
-        logRetention: RetentionDays.ONE_WEEK,
+        logGroup: hackerNewsFunctionLog,
         architecture: Architecture.ARM_64,
         timeout: Duration.seconds(10),
         memorySize: 3008,
@@ -117,16 +136,22 @@ export class SmallTalkStack extends Stack {
     )
 
     // Step Function general stuff
-    const logGroup = new LogGroup(this, `${stack}-stateMachineLog`, {
-      logGroupName: `${stack}-stateMachineLog`,
-      retention: RetentionDays.ONE_WEEK,
-      removalPolicy: RemovalPolicy.DESTROY,
-    })
-
-    const stateMachine = new StateMachine(this, `${stack}-stateMachine`, {
+    const stateMachineName = `${stack}-stateMachine`
+    const stateMachineLogGroup = new LogGroup(
+      this,
+      `${stack}-stateMachine-log`,
+      {
+        logGroupName: stateMachineName,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }
+    )
+    const stateMachine = new StateMachine(this, stateMachineName, {
+      stateMachineName,
       stateMachineType: StateMachineType.EXPRESS,
+      tracingEnabled: true,
       logs: {
-        destination: logGroup,
+        destination: stateMachineLogGroup,
         includeExecutionData: true,
         level: LogLevel.ALL,
       },
