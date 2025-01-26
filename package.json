@@ -10,9 +10,11 @@
     "clean": "rm -rf dist",
     "test": "jest",
     "cdk": "cdk",
-    "deploy": "npm run clean && npm run build && npm run cdk deploy -a SmallTalkStack",
+    "deploy": "npm run clean && npm run build && npm run cdk deploy -- --all",
+    "deploy:ci": "npm run clean && npm run build && npm run cdk deploy -- --all --require-approval never --asset-parallelism true",
     "destroy": "npm run cdk destroy -a SmallTalkStack",
-    "synth": "npm run cdk synth > template.yaml"
+    "synth": "npm run cdk synth",
+    "synth:file": "npm run cdk synth > template.yaml"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
