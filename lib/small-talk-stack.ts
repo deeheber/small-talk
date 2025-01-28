@@ -13,7 +13,13 @@ import {
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
-import { Architecture, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
+import {
+  Architecture,
+  Code,
+  Function,
+  LayerVersion,
+  Runtime,
+} from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import {
   Chain,
@@ -28,6 +34,8 @@ import {
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { config } from 'dotenv'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
+import { join } from 'path'
+import { execSync } from 'child_process'
 config()
 
 export class SmallTalkStack extends Stack {
@@ -72,6 +80,10 @@ export class SmallTalkStack extends Stack {
     )
 
     const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
+    const hackerNewsFunctionDir = join(
+      __dirname,
+      '../src/functions/hacker-news'
+    )
     const hackerNewsFunctionLog = new LogGroup(
       this,
       `${hackerNewsFunctionName}-log`,
@@ -81,21 +93,45 @@ export class SmallTalkStack extends Stack {
         removalPolicy: RemovalPolicy.DESTROY,
       }
     )
-    const hackerNewsFunction = new NodejsFunction(
-      this,
-      hackerNewsFunctionName,
-      {
-        description:
-          'Scrape tech news from Hacker News website for the small talk app',
-        functionName: hackerNewsFunctionName,
-        runtime: Runtime.NODEJS_20_X,
-        entry: 'dist/src/functions/hacker-news.js',
-        logGroup: hackerNewsFunctionLog,
-        architecture: Architecture.ARM_64,
-        timeout: Duration.seconds(10),
-        memorySize: 3008,
-      }
-    )
+    const hackerNewsFunction = new Function(this, hackerNewsFunctionName, {
+      description:
+        'Scrape tech news from Hacker News website for the small talk app',
+      architecture: Architecture.ARM_64,
+      functionName: hackerNewsFunctionName,
+      runtime: Runtime.PYTHON_3_13,
+      handler: 'app.handler',
+      logGroup: hackerNewsFunctionLog,
+      timeout: Duration.seconds(10),
+      memorySize: 3008,
+      code: Code.fromAsset(hackerNewsFunctionDir, {
+        bundling: {
+          image: Runtime.PYTHON_3_13.bundlingImage,
+          command: [
+            'bash',
+            '-c',
+            'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+          ],
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                execSync('pip3 --version')
+              } catch {
+                return false
+              }
+
+              execSync(
+                `pip install -r ${join(
+                  hackerNewsFunctionDir,
+                  'requirements.txt'
+                )} -t ${join(outputDir)}`
+              )
+              execSync(`cp -r ${hackerNewsFunctionDir}/* ${join(outputDir)}`)
+              return true
+            },
+          },
+        },
+      }),
+    })
 
     // Step Function Definition
     const parallel = new Parallel(this, 'Parallel')

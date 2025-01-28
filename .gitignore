@@ -4,6 +4,7 @@
 node_modules
 dist
 .env
+.venv
 
 # CDK asset staging directory
 .cdk.staging
