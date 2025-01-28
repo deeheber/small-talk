@@ -13,6 +13,7 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 - Node.js
 - TypeScript
+- Python
 - AWS
   - API Gateway
   - Step Functions
@@ -21,8 +22,7 @@ An app to generate small talk for those who hate small talk. Helpful for those w
   - Cognito (Coming Soon™️)
   - Secrets Manager
   - CDK
-- Caching service - likely [Momento](https://www.gomomento.com/) (Coming Soon™️)
-- Frontend - TBD (Likely React or Flutter web)
+- Frontend - TBD (Likely HTMX or React)
 
 ## Architecture
 
