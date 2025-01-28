@@ -34,7 +34,7 @@ import {
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { config } from 'dotenv'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
-import path = require('path')
+import { join } from 'path'
 import { execSync } from 'child_process'
 config()
 
@@ -80,7 +80,7 @@ export class SmallTalkStack extends Stack {
     )
 
     const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
-    const hackerNewsFunctionDir = path.join(
+    const hackerNewsFunctionDir = join(
       __dirname,
       '../src/functions/hacker-news'
     )
@@ -120,14 +120,12 @@ export class SmallTalkStack extends Stack {
               }
 
               execSync(
-                `pip install -r ${path.join(
+                `pip install -r ${join(
                   hackerNewsFunctionDir,
                   'requirements.txt'
-                )} -t ${path.join(outputDir)}`
+                )} -t ${join(outputDir)}`
               )
-              execSync(
-                `cp -r ${hackerNewsFunctionDir}/* ${path.join(outputDir)}`
-              )
+              execSync(`cp -r ${hackerNewsFunctionDir}/* ${join(outputDir)}`)
               return true
             },
           },
