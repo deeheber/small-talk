@@ -10,6 +10,7 @@
     "clean": "rm -rf dist",
     "test": "jest",
     "cdk": "cdk",
+    "diff": "npm run cdk diff",
     "deploy": "npm run clean && npm run build && npm run cdk deploy -- --all",
     "deploy:ci": "npm run clean && npm run build && npm run cdk deploy -- --all --require-approval never --asset-parallelism true",
     "destroy": "npm run cdk destroy -a SmallTalkStack",
