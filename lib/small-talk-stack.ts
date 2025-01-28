@@ -59,7 +59,7 @@ export class SmallTalkStack extends Stack {
         'Get current weather using external API for the small talk app',
       functionName: `${stack}-weatherFunction`,
       runtime: Runtime.NODEJS_20_X,
-      entry: 'dist/src/functions/weather.js',
+      entry: 'dist/functions/weather/index.js',
       logGroup: weatherFunctionLog,
       architecture: Architecture.ARM_64,
       timeout: Duration.seconds(10),
@@ -80,10 +80,7 @@ export class SmallTalkStack extends Stack {
     )
 
     const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
-    const hackerNewsFunctionDir = join(
-      __dirname,
-      '../src/functions/hacker-news'
-    )
+    const hackerNewsFunctionDir = join(__dirname, '../functions/hacker-news')
     const hackerNewsFunctionLog = new LogGroup(
       this,
       `${hackerNewsFunctionName}-log`,
