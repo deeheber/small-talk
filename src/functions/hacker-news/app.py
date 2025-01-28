@@ -15,7 +15,6 @@ def handler(event, context):
     # Extract the top 5 articles
     articles = []
     for item in soup.select('.athing')[:5]:
-      print(item)
       try:
         title = item.select_one('.titleline a').get_text()
         link = item.select_one('.titleline a')['href']
@@ -43,7 +42,7 @@ def handler(event, context):
     # Return the result
     result = {
       'statusCode': 200,
-      'body': json.dumps(articles)
+      'body': articles
     }
     
   except requests.exceptions.RequestException as e:

@@ -80,6 +80,10 @@ export class SmallTalkStack extends Stack {
     )
 
     const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
+    const hackerNewsFunctionDir = path.join(
+      __dirname,
+      '../src/functions/hacker-news'
+    )
     const hackerNewsFunctionLog = new LogGroup(
       this,
       `${hackerNewsFunctionName}-log`,
@@ -89,31 +93,17 @@ export class SmallTalkStack extends Stack {
         removalPolicy: RemovalPolicy.DESTROY,
       }
     )
-    const hackerNewsFunction = new NodejsFunction(
-      this,
-      hackerNewsFunctionName,
-      {
-        description:
-          'Scrape tech news from Hacker News website for the small talk app',
-        functionName: hackerNewsFunctionName,
-        runtime: Runtime.NODEJS_20_X,
-        entry: 'dist/src/functions/hacker-news.js',
-        logGroup: hackerNewsFunctionLog,
-        architecture: Architecture.ARM_64,
-        timeout: Duration.seconds(10),
-        memorySize: 3008,
-      }
-    )
-
-    const functionDir = path.join(__dirname, '../src/functions/hacker-news')
-    const pythonFunction = new Function(this, 'PythonTest', {
+    const hackerNewsFunction = new Function(this, hackerNewsFunctionName, {
+      description:
+        'Scrape tech news from Hacker News website for the small talk app',
       architecture: Architecture.ARM_64,
-      functionName: `${id}-PythonTest`,
+      functionName: hackerNewsFunctionName,
       runtime: Runtime.PYTHON_3_13,
       handler: 'app.handler',
+      logGroup: hackerNewsFunctionLog,
       timeout: Duration.seconds(10),
       memorySize: 3008,
-      code: Code.fromAsset(functionDir, {
+      code: Code.fromAsset(hackerNewsFunctionDir, {
         bundling: {
           image: Runtime.PYTHON_3_13.bundlingImage,
           command: [
@@ -131,11 +121,13 @@ export class SmallTalkStack extends Stack {
 
               execSync(
                 `pip install -r ${path.join(
-                  functionDir,
+                  hackerNewsFunctionDir,
                   'requirements.txt'
                 )} -t ${path.join(outputDir)}`
               )
-              execSync(`cp -r ${functionDir}/* ${path.join(outputDir)}`)
+              execSync(
+                `cp -r ${hackerNewsFunctionDir}/* ${path.join(outputDir)}`
+              )
               return true
             },
           },
