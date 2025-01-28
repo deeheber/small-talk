@@ -13,7 +13,13 @@ import {
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
-import { Architecture, LayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda'
+import {
+  Architecture,
+  Code,
+  Function,
+  LayerVersion,
+  Runtime,
+} from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 import {
   Chain,
@@ -28,6 +34,8 @@ import {
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { config } from 'dotenv'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
+import path = require('path')
+import { execSync } from 'child_process'
 config()
 
 export class SmallTalkStack extends Stack {
@@ -96,6 +104,44 @@ export class SmallTalkStack extends Stack {
         memorySize: 3008,
       }
     )
+
+    const functionDir = path.join(__dirname, '../src/functions/hacker-news')
+    const pythonFunction = new Function(this, 'PythonTest', {
+      architecture: Architecture.ARM_64,
+      functionName: `${id}-PythonTest`,
+      runtime: Runtime.PYTHON_3_13,
+      handler: 'app.handler',
+      timeout: Duration.seconds(10),
+      memorySize: 3008,
+      code: Code.fromAsset(functionDir, {
+        bundling: {
+          image: Runtime.PYTHON_3_13.bundlingImage,
+          command: [
+            'bash',
+            '-c',
+            'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+          ],
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                execSync('pip3 --version')
+              } catch {
+                return false
+              }
+
+              execSync(
+                `pip install -r ${path.join(
+                  functionDir,
+                  'requirements.txt'
+                )} -t ${path.join(outputDir)}`
+              )
+              execSync(`cp -r ${functionDir}/* ${path.join(outputDir)}`)
+              return true
+            },
+          },
+        },
+      }),
+    })
 
     // Step Function Definition
     const parallel = new Parallel(this, 'Parallel')
