@@ -28,7 +28,7 @@ export const handler = async (event: FunctionInput): Promise<any> => {
     }
 
     // Get coordinates
-    const coordinatesUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${event.body.location}&limit=1&appid=${SecretString}`
+    const coordinatesUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${event.body.location}&limit=1&appid=${SecretString}`
     const coordinatesResponse = await fetch(coordinatesUrl)
 
     if (!coordinatesResponse.ok) {
