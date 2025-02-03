@@ -11,15 +11,12 @@ An app to generate small talk for those who hate small talk. Helpful for those w
 
 ## Tech stack
 
-- Node.js
-- TypeScript
+- TypeScript/Node.js
 - Python
 - AWS
   - API Gateway
   - Step Functions
   - Lambda
-  - IAM
-  - Cognito (Coming Soon™️)
   - Secrets Manager
   - CDK
 - Frontend - TBD (Likely HTMX or React)
@@ -44,13 +41,12 @@ See [the board](https://github.com/users/deeheber/projects/1/views/1) for detail
 ### Deployment
 
 1. Get an API key from [OpenWeather](https://openweathermap.org/api)
-2. [Create a Secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) in Secrets Manager titled `smalltalk-weather` with a plaintext secret value that is your OpenWeather API key -> Save the secret ARN (will need this for step 4)
+2. [Create a Secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) in Secrets Manager titled `smalltalk-weather` with a plaintext secret value that is your OpenWeather API key
 3. Clone the repo
-4. Copy `.env.example` to `.env` and fill in the values
-5. Run `npm install`
-6. Run `export AWS_PROFILE=<your_aws_profile>`
+4. Run `npm install`
+5. Run `export AWS_PROFILE=<your_aws_profile>`
    - Optional if you have a default profile or use `--profile` instead
-7. Run `npm run deploy`
+6. Run `npm run deploy`
 
 ### Using
 

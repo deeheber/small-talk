@@ -2,6 +2,7 @@ import {
   CfnOutput,
   Duration,
   RemovalPolicy,
+  SecretValue,
   Stack,
   StackProps,
 } from 'aws-cdk-lib'
@@ -12,18 +13,17 @@ import {
   Period,
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
-import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 import {
-  Architecture,
-  Code,
-  Function,
-  LayerVersion,
-  Runtime,
-} from 'aws-cdk-lib/aws-lambda'
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
+  Authorization,
+  Connection,
+  HttpParameter,
+} from 'aws-cdk-lib/aws-events'
+import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 import {
   Chain,
   DefinitionBody,
+  JitterType,
   LogLevel,
   Parallel,
   Pass,
@@ -31,54 +31,18 @@ import {
   StateMachineType,
   TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
-import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
-import { config } from 'dotenv'
-import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
+import { HttpInvoke, LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
+
 import { join } from 'path'
 import { execSync } from 'child_process'
-config()
 
 export class SmallTalkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
+
     const stack = Stack.of(this)
 
-    // Step Function Lambda Invoke Functions
-    const weatherFunctionName = `${stack}-weatherFunction`
-    const weatherFunctionLog = new LogGroup(
-      this,
-      `${weatherFunctionName}-log`,
-      {
-        logGroupName: weatherFunctionName,
-        retention: RetentionDays.ONE_WEEK,
-        removalPolicy: RemovalPolicy.DESTROY,
-      }
-    )
-    const weatherFunction = new NodejsFunction(this, weatherFunctionName, {
-      description:
-        'Get current weather using external API for the small talk app',
-      functionName: `${stack}-weatherFunction`,
-      runtime: Runtime.NODEJS_20_X,
-      entry: 'dist/functions/weather/index.js',
-      logGroup: weatherFunctionLog,
-      architecture: Architecture.ARM_64,
-      timeout: Duration.seconds(10),
-      memorySize: 3008,
-      layers: [
-        LayerVersion.fromLayerVersionArn(
-          this,
-          'SecretsManagerLayer',
-          process.env.SECRETS_EXTENSION_ARN!
-        ),
-      ],
-    })
-    weatherFunction.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['secretsmanager:GetSecretValue'],
-        resources: [process.env.WEATHER_SECRET_ARN!],
-      })
-    )
-
+    // Hacker news branch resources
     const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
     const hackerNewsFunctionDir = join(__dirname, '../functions/hacker-news')
     const hackerNewsFunctionLog = new LogGroup(
@@ -130,24 +94,7 @@ export class SmallTalkStack extends Stack {
       }),
     })
 
-    // Step Function Definition
-    const parallel = new Parallel(this, 'Parallel')
-
-    const getWeather = new LambdaInvoke(this, 'Check current weather', {
-      lambdaFunction: weatherFunction,
-      payload: TaskInput.fromJsonPathAt('$'),
-      comment: 'Get current weather using external API',
-      resultSelector: { 'weather.$': '$.Payload' },
-    })
-      .addRetry({
-        maxAttempts: 3,
-        backoffRate: 2,
-      })
-      .addCatch(new Pass(this, 'Handle Weather Failure'), {
-        resultPath: '$.weather',
-      })
-
-    const getTechNews = new LambdaInvoke(this, 'Get Tech News', {
+    const getTechNewsBranch = new LambdaInvoke(this, 'Get Tech News', {
       lambdaFunction: hackerNewsFunction,
       payload: TaskInput.fromJsonPathAt('$'),
       comment: 'Scrape tech news from Hacker News website',
@@ -156,19 +103,94 @@ export class SmallTalkStack extends Stack {
       .addRetry({
         maxAttempts: 3,
         backoffRate: 2,
+        jitterStrategy: JitterType.FULL,
       })
       .addCatch(new Pass(this, 'Handle Tech News Failure'), {
         resultPath: '$.techNews.techNews',
       })
 
-    parallel.branch(getWeather)
-    parallel.branch(getTechNews)
+    // Weather branch resources
+    const connection = new Connection(this, `${stack}-connection`, {
+      description: 'Connection to OpenWeatherMap API',
+      connectionName: `${stack}`,
+      authorization: Authorization.apiKey(
+        'smalltalk-authorization',
+        SecretValue.secretsManager('smalltalk-weather')
+      ),
+      queryStringParameters: {
+        appid: HttpParameter.fromSecret(
+          SecretValue.secretsManager('smalltalk-weather')
+        ),
+      },
+    })
+
+    const getCords = new HttpInvoke(this, 'Get Coordinates', {
+      apiRoot: `https://api.openweathermap.org`,
+      apiEndpoint: TaskInput.fromText('geo/1.0/direct'),
+      connection,
+      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
+      method: TaskInput.fromText('GET'),
+      queryStringParameters: TaskInput.fromObject({
+        limit: '1',
+        'q.$': '$.body.location',
+      }),
+      resultSelector: {
+        'lat.$': '$.ResponseBody[0].lat',
+        'lon.$': '$.ResponseBody[0].lon',
+        'name.$': '$$.Execution.Input.body.location',
+      },
+      resultPath: '$.metadata.metadata',
+      outputPath: '$.metadata',
+    })
+      .addRetry({
+        maxAttempts: 3,
+        backoffRate: 2,
+        jitterStrategy: JitterType.FULL,
+      })
+      .addCatch(new Pass(this, 'Handle Get Coordinates Failure'), {
+        resultPath: '$',
+      })
+
+    const getWeather = new HttpInvoke(this, 'Get Weather', {
+      apiRoot: `https://api.openweathermap.org`,
+      apiEndpoint: TaskInput.fromText('data/3.0/onecall'),
+      connection,
+      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
+      method: TaskInput.fromText('GET'),
+      queryStringParameters: TaskInput.fromObject({
+        units: 'imperial',
+        exclude: 'minutely,hourly,daily,alerts',
+        'lat.$': '$.metadata.lat',
+        'lon.$': '$.metadata.lon',
+      }),
+      resultSelector: {
+        'weather.$': '$.ResponseBody.current',
+        'statusCode.$': '$.StatusCode',
+        'statusText.$': '$.StatusText',
+      },
+      resultPath: '$.taskResult',
+    })
+      .addRetry({
+        maxAttempts: 3,
+        backoffRate: 2,
+        jitterStrategy: JitterType.FULL,
+      })
+      .addCatch(new Pass(this, 'Handle Get Weather Failure'), {
+        resultPath: '$',
+      })
+
+    const getWeatherBranch = getCords.next(getWeather)
+
+    // Step Function definition
+    const parallel = new Parallel(this, 'Parallel')
+    parallel.branch(getWeatherBranch)
+    parallel.branch(getTechNewsBranch)
 
     const definition = Chain.start(parallel).next(
       new Pass(this, 'Combine Results')
     )
 
-    // Step Function general stuff
+    // Step Function
     const stateMachineName = `${stack}-stateMachine`
     const stateMachineLogGroup = new LogGroup(
       this,
@@ -191,7 +213,7 @@ export class SmallTalkStack extends Stack {
       definitionBody: DefinitionBody.fromChainable(definition),
     })
 
-    // API Gateway stuff
+    // API Gateway
     const api = new RestApi(this, `${stack}-api`, {
       restApiName: `${stack}-api`,
       defaultMethodOptions: { apiKeyRequired: true },
