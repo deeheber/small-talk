@@ -103,6 +103,7 @@ export class SmallTalkStack extends Stack {
       .addRetry({
         maxAttempts: 3,
         backoffRate: 2,
+        interval: Duration.seconds(2),
         jitterStrategy: JitterType.FULL,
       })
       .addCatch(new Pass(this, 'Handle Tech News Failure'), {
@@ -145,6 +146,7 @@ export class SmallTalkStack extends Stack {
       .addRetry({
         maxAttempts: 3,
         backoffRate: 2,
+        interval: Duration.seconds(2),
         jitterStrategy: JitterType.FULL,
       })
       .addCatch(new Pass(this, 'Handle Get Coordinates Failure'), {
@@ -173,6 +175,7 @@ export class SmallTalkStack extends Stack {
       .addRetry({
         maxAttempts: 3,
         backoffRate: 2,
+        interval: Duration.seconds(2),
         jitterStrategy: JitterType.FULL,
       })
       .addCatch(new Pass(this, 'Handle Get Weather Failure'), {
