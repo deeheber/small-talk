@@ -1,0 +1,58 @@
+name: ci
+run-name: ${{ github.actor }} has run the ci trigger
+
+on:
+  pull_request:
+    branches:
+      - main
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: install dependencies
+        run: npm ci
+
+      - name: build
+        run: npm run build
+
+      - name: run eslint check
+        run: npm run lint:ci
+
+      - name: run prettier format check
+        run: npm run format:ci
+
+      # TODO uncomment when tests are added
+      # https://github.com/deeheber/small-talk/issues/5
+      # - name: test
+      #   run: npm test
+
+      - name: configure AWS credentials from OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # 15 minutes aka shortest time allowed
+          role-duration-seconds: 900
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: us-east-1
+
+      - name: cdk synth against production
+        run: npm run synth:quiet
