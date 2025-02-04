@@ -6,11 +6,10 @@ import {
   Stack,
   StackProps,
 } from 'aws-cdk-lib'
-import { Construct } from 'constructs'
 import {
-  StepFunctionsIntegration,
-  RestApi,
   Period,
+  RestApi,
+  StepFunctionsIntegration,
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
 import {
@@ -32,9 +31,9 @@ import {
   TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import { HttpInvoke, LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
-
-import { join } from 'path'
 import { execSync } from 'child_process'
+import { Construct } from 'constructs'
+import { join } from 'path'
 
 export class SmallTalkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
