@@ -1,6 +1,6 @@
 # small-talk
 
-An app to generate small talk for those who hate small talk. Helpful for those who are socially awkward, or just want to avoid it. Could also be helpful to workers who need to communicate with coworkers who are geographically located in different areas.
+A tool to generate small talk for those who hate small talk. Helpful for those who are socially awkward, or just want to avoid it. Could also be helpful to workers who need to communicate with coworkers who are geographically located in different areas.
 
 ## Channels
 
