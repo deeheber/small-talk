@@ -51,7 +51,7 @@ export class SmallTalkStack extends Stack {
         logGroupName: hackerNewsFunctionName,
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: RemovalPolicy.DESTROY,
-      }
+      },
     )
     const hackerNewsFunction = new Function(this, hackerNewsFunctionName, {
       description:
@@ -82,8 +82,8 @@ export class SmallTalkStack extends Stack {
               execSync(
                 `pip install -r ${join(
                   hackerNewsFunctionDir,
-                  'requirements.txt'
-                )} -t ${join(outputDir)}`
+                  'requirements.txt',
+                )} -t ${join(outputDir)}`,
               )
               execSync(`cp -r ${hackerNewsFunctionDir}/* ${join(outputDir)}`)
               return true
@@ -115,11 +115,11 @@ export class SmallTalkStack extends Stack {
       connectionName: `${stack}`,
       authorization: Authorization.apiKey(
         'smalltalk-authorization',
-        SecretValue.secretsManager('smalltalk-weather')
+        SecretValue.secretsManager('smalltalk-weather'),
       ),
       queryStringParameters: {
         appid: HttpParameter.fromSecret(
-          SecretValue.secretsManager('smalltalk-weather')
+          SecretValue.secretsManager('smalltalk-weather'),
         ),
       },
     })
@@ -189,7 +189,7 @@ export class SmallTalkStack extends Stack {
     parallel.branch(getTechNewsBranch)
 
     const definition = Chain.start(parallel).next(
-      new Pass(this, 'Combine Results')
+      new Pass(this, 'Combine Results'),
     )
 
     // Step Function
@@ -201,7 +201,7 @@ export class SmallTalkStack extends Stack {
         logGroupName: stateMachineName,
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: RemovalPolicy.DESTROY,
-      }
+      },
     )
     const stateMachine = new StateMachine(this, stateMachineName, {
       stateMachineName,
@@ -227,7 +227,7 @@ export class SmallTalkStack extends Stack {
     const endpoint = api.root.addResource('small-talk')
     endpoint.addMethod(
       'POST',
-      StepFunctionsIntegration.startExecution(stateMachine)
+      StepFunctionsIntegration.startExecution(stateMachine),
     )
 
     const defaultUsagePlan = new UsagePlan(this, 'DefaultUsagePlan', {
