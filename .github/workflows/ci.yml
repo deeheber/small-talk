@@ -54,5 +54,5 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: us-east-1
 
-      - name: cdk synth against production
+      - name: cdk synth
         run: npm run synth:quiet
