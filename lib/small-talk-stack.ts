@@ -69,7 +69,7 @@ export class SmallTalkStack extends Stack {
           command: [
             'bash',
             '-c',
-            'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
           ],
           local: {
             tryBundle(outputDir: string) {
@@ -80,7 +80,7 @@ export class SmallTalkStack extends Stack {
               }
 
               execSync(
-                `pip install -r ${join(
+                `pip3 install -r ${join(
                   hackerNewsFunctionDir,
                   'requirements.txt',
                 )} -t ${join(outputDir)}`,
