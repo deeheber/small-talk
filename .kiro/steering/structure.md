@@ -12,12 +12,15 @@
 
 ## Key Files
 
+- `README.md` - Project documentation with quick start guide
+- `.nvmrc` - Node.js version specification (v22)
 - `cdk.json` - CDK configuration and feature flags
 - `package.json` - NPM dependencies and scripts
 - `tsconfig.json` - TypeScript compiler configuration
 - `eslint.config.mjs` - ESLint configuration
 - `.prettierrc` - Prettier formatting rules
 - `jest.config.js` - Jest testing configuration
+- `CONTRIBUTING.md` - Contribution guidelines
 
 ## Code Organization
 
@@ -50,10 +53,18 @@
 
 ## Configuration Management
 
-- Environment-specific values through CDK context
-- Secrets stored in AWS Secrets Manager
-- API keys and sensitive data never in code
-- CDK feature flags in `cdk.json` context
+- **Secrets**: AWS Secrets Manager for API keys (`smalltalk-weather`)
+- **Environment**: CDK context for environment-specific values
+- **Feature flags**: CDK feature flags in `cdk.json` context
+- **Security**: No sensitive data in code or version control
+- **Deployment**: Stack outputs provide API endpoints and key IDs
+
+## Documentation Standards
+
+- Use emojis sparingly in documentation for visual appeal
+- Keep README scannable with clear sections and code blocks
+- Include both curl examples and alternative tools (Postman/Insomnia)
+- Provide complete deployment instructions with prerequisites
 
 ## Build Artifacts
 

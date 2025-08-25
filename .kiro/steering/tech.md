@@ -2,7 +2,7 @@
 
 ## Core Technologies
 
-- **TypeScript/Node.js** - Primary development language for infrastructure and CDK
+- **TypeScript/Node.js v22** - Primary development language for infrastructure and CDK (use `.nvmrc`)
 - **Python 3.13** - Lambda function runtime for web scraping
 - **AWS CDK** - Infrastructure as Code using TypeScript
 
@@ -26,6 +26,7 @@
 ### Development
 
 ```bash
+nvm use              # Use Node version from .nvmrc (v22)
 npm install          # Install dependencies
 npm run build        # Compile TypeScript
 npm run watch        # Watch mode compilation
@@ -61,8 +62,18 @@ npm run clean:tsc    # Clean TypeScript output
 
 ## Architecture Patterns
 
-- Serverless-first approach using AWS Lambda and Step Functions
-- Parallel processing for independent data sources
-- Error handling with retries and catch blocks
-- Infrastructure as Code with AWS CDK
-- API-first design with proper authentication
+- **Serverless-first** - AWS Lambda and Step Functions for scalability
+- **Parallel processing** - Independent data sources fetched simultaneously
+- **Error resilience** - Retries with exponential backoff and catch blocks
+- **Infrastructure as Code** - AWS CDK with TypeScript
+- **API-first design** - REST API with proper authentication and rate limiting
+- **Security** - API keys stored in Secrets Manager, never in code
+- **Cost optimization** - ARM64 Lambda architecture, Express Step Functions
+
+## API Specifications
+
+- **Authentication**: API key via `x-api-key` header
+- **Rate limiting**: 10 requests/second, 1000/day per key
+- **Location format**: `{city name},{state code},{country code}`
+- **Response format**: JSON with weather and tech news objects
+- **Error handling**: Graceful degradation if one data source fails
