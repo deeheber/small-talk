@@ -36,13 +36,20 @@ import { Construct } from 'constructs'
 import { join } from 'path'
 
 export class SmallTalkStack extends Stack {
+  public id: string
+  private stateMachine: StateMachine
+
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props)
+    this.id = id
 
-    const stack = Stack.of(this)
+    this.createStateMachine()
+    this.createApi()
+  }
 
+  private createStateMachine() {
     // Hacker news branch resources
-    const hackerNewsFunctionName = `${stack}-hackerNewsFunction`
+    const hackerNewsFunctionName = `${this.id}-hackerNewsFunction`
     const hackerNewsFunctionDir = join(__dirname, '../functions/hacker-news')
     const hackerNewsFunctionLog = new LogGroup(
       this,
@@ -69,7 +76,7 @@ export class SmallTalkStack extends Stack {
           command: [
             'bash',
             '-c',
-            'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
           ],
           local: {
             tryBundle(outputDir: string) {
@@ -80,7 +87,7 @@ export class SmallTalkStack extends Stack {
               }
 
               execSync(
-                `pip install -r ${join(
+                `pip3 install -r ${join(
                   hackerNewsFunctionDir,
                   'requirements.txt',
                 )} -t ${join(outputDir)}`,
@@ -110,9 +117,9 @@ export class SmallTalkStack extends Stack {
       })
 
     // Weather branch resources
-    const connection = new Connection(this, `${stack}-connection`, {
+    const connection = new Connection(this, `${this.id}-connection`, {
       description: 'Connection to OpenWeatherMap API',
-      connectionName: `${stack}`,
+      connectionName: `${this.id}`,
       authorization: Authorization.apiKey(
         'smalltalk-authorization',
         SecretValue.secretsManager('smalltalk-weather'),
@@ -193,17 +200,17 @@ export class SmallTalkStack extends Stack {
     )
 
     // Step Function
-    const stateMachineName = `${stack}-stateMachine`
+    const stateMachineName = `${this.id}-stateMachine`
     const stateMachineLogGroup = new LogGroup(
       this,
-      `${stack}-stateMachine-log`,
+      `${this.id}-stateMachine-log`,
       {
         logGroupName: stateMachineName,
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: RemovalPolicy.DESTROY,
       },
     )
-    const stateMachine = new StateMachine(this, stateMachineName, {
+    this.stateMachine = new StateMachine(this, stateMachineName, {
       stateMachineName,
       stateMachineType: StateMachineType.EXPRESS,
       tracingEnabled: true,
@@ -214,10 +221,12 @@ export class SmallTalkStack extends Stack {
       },
       definitionBody: DefinitionBody.fromChainable(definition),
     })
+  }
 
+  private createApi() {
     // API Gateway
-    const api = new RestApi(this, `${stack}-api`, {
-      restApiName: `${stack}-api`,
+    const api = new RestApi(this, `${this.id}-api`, {
+      restApiName: `${this.id}-api`,
       defaultMethodOptions: { apiKeyRequired: true },
       deployOptions: {
         stageName: 'v1',
@@ -227,7 +236,7 @@ export class SmallTalkStack extends Stack {
     const endpoint = api.root.addResource('small-talk')
     endpoint.addMethod(
       'POST',
-      StepFunctionsIntegration.startExecution(stateMachine),
+      StepFunctionsIntegration.startExecution(this.stateMachine),
     )
 
     const defaultUsagePlan = new UsagePlan(this, 'DefaultUsagePlan', {

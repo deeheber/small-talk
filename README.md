@@ -1,25 +1,19 @@
-# small-talk
+# Small Talk Generator 💬
 
-A tool to generate small talk for those who hate small talk. Helpful for those who are socially awkward, or just want to avoid it. Could also be helpful to workers who need to communicate with coworkers who are geographically located in different areas.
+Generate conversation starters when small talk doesn't come naturally. Perfect for remote workers connecting with distributed teams or anyone who wants to break the ice with relevant, timely topics.
 
-## Channels
+## What You Get
 
-1. Weather - [OpenWeather](https://openweathermap.org/api)
-2. News - [Hackernews](https://news.ycombinator.com/) (most news APIs aren't good or cost $)
+- **Current Weather** ☀️ - Local conditions via [OpenWeather API](https://openweathermap.org/api)
+- **Tech News** 📰 - Top 5 stories from [Hacker News](https://news.ycombinator.com/)
 
-**Other channel ideas are welcome! Feel free to submit an [issue](https://github.com/deeheber/small-talk/issues) with your idea.**
+Got ideas for more channels? [Open an issue](https://github.com/deeheber/small-talk/issues) and let us know!
 
-## Tech stack
+## Tech Stack
 
-- TypeScript/Node.js
-- Python
-- AWS
-  - API Gateway
-  - Step Functions
-  - Lambda
-  - Secrets Manager
-  - CDK
-- Frontend - TBD (Likely HTMX or React)
+**Backend:** TypeScript/Node.js, Python, AWS CDK  
+**AWS Services:** API Gateway, Step Functions, Lambda, Secrets Manager  
+**Frontend:** Coming soon (HTMX or React)
 
 ## Architecture
 
@@ -27,62 +21,66 @@ A tool to generate small talk for those who hate small talk. Helpful for those w
 
 <img width="537" alt="small-talk-asl" src="https://github.com/deeheber/small-talk/assets/12616554/fff34b51-e832-4f1d-835b-046f4c7eb4eb">
 
-## Release plan
+## Roadmap
 
-See [the board](https://github.com/users/deeheber/projects/1/views/1) for details and in progress tasks
+Track progress and upcoming features on [the project board](https://github.com/users/deeheber/projects/1/views/1).
 
-## How to run
+## Quick Start 🚀
 
 ### Prerequisites
 
-1. Install Node.js
-2. Ensure you have an AWS account, install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), and [configure your credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
+- Node.js installed
+- AWS account with [CLI configured](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html)
+- [OpenWeather API key](https://openweathermap.org/api) (free tier available)
 
-### Deployment
+### Deploy to AWS
 
-1. Get an API key from [OpenWeather](https://openweathermap.org/api)
-2. [Create a Secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) in Secrets Manager titled `smalltalk-weather` with a plaintext secret value that is your OpenWeather API key
-3. Clone the repo
-4. Run `npm install`
-5. Run `export AWS_PROFILE=<your_aws_profile>`
-   - Optional if you have a default profile or use `--profile` instead
-6. Run `npm run deploy`
+1. **Setup secrets**
 
-### Using
+   ```bash
+   # Store your OpenWeather API key in AWS Secrets Manager
+   aws secretsmanager create-secret --name smalltalk-weather --secret-string "your-api-key-here"
+   ```
 
-1. Get the api URL
+2. **Deploy the app**
 
-- Base URL comes from the console output after deploy `SmallTalkStack.SmallTalkStackapiEndpoint`
-- Add `/small-talk` to the end
+   ```bash
+   git clone <this-repo>
+   cd small-talk
+   npm install
+   npm run deploy
+   ```
 
-2. Get the api key
+3. **Note the outputs** - Save the API endpoint and key ID from the deployment output
 
-- The api-id should be from the console output after deploy `SmallTalkStack.CLIApiKeyId`
-- `aws apigateway get-api-key --api-key your-api-id --include-value`
+### Usage
 
-3. Run a curl command
+1. **Get your API key**
 
-- `curl --location 'your-url' \
---header 'x-api-key: your-api-key' \
---header 'Content-Type: application/json' \
---data '{
-    "location": "Portland, Oregon, US"
-}
-'`
+   ```bash
+   aws apigateway get-api-key --api-key <CLI-ApiKeyId-from-deploy> --include-value
+   ```
 
-4. Alt: use [Postman](https://www.postman.com/) or [Insomnia](https://insomnia.rest/)
+2. **Make a request**
+   ```bash
+   curl -X POST https://<your-api-endpoint>/small-talk \
+     -H "x-api-key: <your-api-key>" \
+     -H "Content-Type: application/json" \
+     -d '{"location": "Portland, Oregon, US"}'
+   ```
 
-5. Note: Units of measurement returned are imperial (e.g. Fahrenheit, miles, etc.). Location should be in format `{city name},{state code},{country code}`. See [OpenWeather docs](https://openweathermap.org/api/geocoding-api) for more info.
+**Location format:** `{city name},{state code},{country code}` (see [OpenWeather docs](https://openweathermap.org/api/geocoding-api))  
+**Units:** Imperial (Fahrenheit, miles, etc.)  
+**Alternative:** Use [Postman](https://www.postman.com/) or [Insomnia](https://insomnia.rest/) for testing
 
-### Cleanup
+## Development 🛠️
 
-If you want to delete the resources created by this project, run `npm run destroy`.
-
-### Tests
-
-TODO https://github.com/deeheber/small-talk/issues/5
-
-`npm run test`.
+```bash
+npm run build    # Compile TypeScript
+npm run test     # Run tests (coming soon)
+npm run lint     # Check code style
+npm run destroy  # Remove AWS resources
+```
 
 ## Contributing
 
