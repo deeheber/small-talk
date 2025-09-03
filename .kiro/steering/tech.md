@@ -9,7 +9,7 @@
 ## AWS Services
 
 - **API Gateway** - REST API endpoint with API key authentication
-- **Step Functions** - Express workflows for parallel data fetching
+- **Step Functions** - Express workflows for parallel data fetching that uses JSONata
 - **Lambda** - Serverless compute for Hacker News scraping
 - **Secrets Manager** - Secure storage for OpenWeather API key
 - **CloudWatch Logs** - Centralized logging with 1-week retention
