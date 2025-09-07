@@ -1,11 +1,15 @@
 import json
+import logging
 import requests
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
 def handler(event, context):
   try:
     # Log the received event
-    print("Received event: " + json.dumps(event, indent=2))
+    logger.info("Received event: " + json.dumps(event, indent=2))
     
     # Fetch the Hacker News page
     page = requests.get('https://news.ycombinator.com/')
@@ -37,7 +41,7 @@ def handler(event, context):
             'comments': int(comments)
         })
       except Exception as e:
-        print(f"Error processing article: {e}")
+        logger.error(f"Error processing article: {e}")
     
     # Return the result
     result = {
@@ -46,13 +50,13 @@ def handler(event, context):
     }
     
   except requests.exceptions.RequestException as e:
-    print(f"Error fetching Hacker News page: {e}")
+    logger.error(f"Error fetching Hacker News page: {e}")
     result = {
       'statusCode': 500,
       'body': json.dumps({'error': 'Failed to fetch Hacker News page'})
     }
   except Exception as e:
-    print(f"Unexpected error: {e}")
+    logger.error(f"Unexpected error: {e}")
     result = {
       'statusCode': 500,
       'body': json.dumps({'error': 'An unexpected error occurred'})
