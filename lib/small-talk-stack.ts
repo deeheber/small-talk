@@ -17,6 +17,7 @@ import {
   Connection,
   HttpParameter,
 } from 'aws-cdk-lib/aws-events'
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 import {
@@ -69,8 +70,8 @@ export class SmallTalkStack extends Stack {
       runtime: Runtime.PYTHON_3_13,
       handler: 'app.handler',
       logGroup: hackerNewsFunctionLog,
-      timeout: Duration.seconds(10),
-      memorySize: 3008,
+      timeout: Duration.seconds(15),
+      memorySize: 256,
       code: Code.fromAsset(hackerNewsFunctionDir, {
         bundling: {
           image: Runtime.PYTHON_3_13.bundlingImage,
@@ -116,6 +117,64 @@ export class SmallTalkStack extends Stack {
     })
 
     // Weather branch resources
+    const weatherFunctionName = `${this.id}-weatherFunction`
+    const weatherFunctionDir = join(__dirname, '../functions/weather')
+    const weatherFunctionLog = new LogGroup(
+      this,
+      `${weatherFunctionName}-log`,
+      {
+        logGroupName: weatherFunctionName,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      },
+    )
+    const weatherFunction = new Function(this, weatherFunctionName, {
+      description: 'Get weather data from an API for the small talk app',
+      architecture: Architecture.ARM_64,
+      functionName: weatherFunctionName,
+      runtime: Runtime.PYTHON_3_13,
+      handler: 'app.handler',
+      logGroup: weatherFunctionLog,
+      timeout: Duration.seconds(15),
+      memorySize: 256,
+      code: Code.fromAsset(weatherFunctionDir, {
+        bundling: {
+          image: Runtime.PYTHON_3_13.bundlingImage,
+          command: [
+            'bash',
+            '-c',
+            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+          ],
+          local: {
+            tryBundle(outputDir: string) {
+              try {
+                execSync('pip3 --version')
+              } catch {
+                return false
+              }
+
+              execSync(
+                `pip3 install -r ${join(
+                  weatherFunctionDir,
+                  'requirements.txt',
+                )} -t ${join(outputDir)}`,
+              )
+              execSync(`cp -r ${weatherFunctionDir}/* ${join(outputDir)}`)
+              return true
+            },
+          },
+        },
+      }),
+    })
+    weatherFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:smalltalk-weather*`,
+        ],
+      }),
+    )
+
     const connection = new Connection(this, `${this.id}-connection`, {
       description: 'Connection to OpenWeatherMap API',
       connectionName: `${this.id}`,
