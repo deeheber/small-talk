@@ -9,10 +9,13 @@ logger.setLevel("INFO")
 
 def handler(event, context):
     try:
-        # Log the received event
         logger.info("Received event: " + json.dumps(event, indent=2))
 
-        # Fetch the Hacker News page
+        # TODO: get news from cache
+        # If failure -> continue
+        # If in there -> return value
+        # If not -> continue
+
         page = requests.get("https://news.ycombinator.com/")
         page.raise_for_status()  # Raise an HTTPError for bad responses
         soup = BeautifulSoup(page.content, "html.parser")
@@ -50,8 +53,10 @@ def handler(event, context):
             except Exception as e:
                 logger.error(f"Error processing article: {e}")
 
-        # Return the result
         result = {"statusCode": 200, "body": articles}
+
+        # TODO: Put news results into cache
+        # Just log failures don't block
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching Hacker News page: {e}")

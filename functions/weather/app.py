@@ -16,6 +16,10 @@ def handler(event, context):
         logger.info("Received event: " + json.dumps(event, indent=2))
         location = event.get("body", {}).get("location")
 
+        # TODO: get location weather from cache
+        # If in there -> return value
+        # If not -> continue
+
         # Reuse secret on subsequent lambda invokes
         global weather_api_key
         if weather_api_key is None:
@@ -48,6 +52,9 @@ def handler(event, context):
                 "weather": weather_data,
             },
         }
+
+        # TODO: Put weather results into cache
+        # Just log failures don't block
 
     except requests.exceptions.RequestException as e:
         logger.error(f"HTTP error: {e}")
