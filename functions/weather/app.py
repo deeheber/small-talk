@@ -41,19 +41,22 @@ def handler(event, context):
 
         result = {
             "statusCode": 200,
-            "body": json.dumps(
-                {"location": location, "lat": lat, "lon": lon, "weather": weather_data}
-            ),
+            "body": {
+                "location": location,
+                "lat": lat,
+                "lon": lon,
+                "weather": weather_data,
+            },
         }
 
     except requests.exceptions.RequestException as e:
         logger.error(f"HTTP error: {e}")
-        result = {"statusCode": 500, "body": json.dumps({"error": "Failed to fetch"})}
+        result = {"statusCode": 500, "body": {"error": "Failed to fetch"}}
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         result = {
             "statusCode": 500,
-            "body": json.dumps({"error": "An unexpected error occurred"}),
+            "body": {"error": "An unexpected error occurred"},
         }
 
     return result

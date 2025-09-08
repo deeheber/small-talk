@@ -57,13 +57,13 @@ def handler(event, context):
         logger.error(f"Error fetching Hacker News page: {e}")
         result = {
             "statusCode": 500,
-            "body": json.dumps({"error": "Failed to fetch Hacker News page"}),
+            "body": {"error": "Failed to fetch Hacker News page"},
         }
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         result = {
             "statusCode": 500,
-            "body": json.dumps({"error": "An unexpected error occurred"}),
+            "body": {"error": "An unexpected error occurred"},
         }
 
     return result

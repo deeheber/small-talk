@@ -2,7 +2,6 @@ import {
   CfnOutput,
   Duration,
   RemovalPolicy,
-  SecretValue,
   Stack,
   StackProps,
 } from 'aws-cdk-lib'
@@ -12,11 +11,6 @@ import {
   StepFunctionsIntegration,
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
-import {
-  Authorization,
-  Connection,
-  HttpParameter,
-} from 'aws-cdk-lib/aws-events'
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
@@ -30,9 +24,8 @@ import {
   QueryLanguage,
   StateMachine,
   StateMachineType,
-  TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
-import { HttpInvoke, LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
+import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
 import { execSync } from 'child_process'
 import { Construct } from 'constructs'
 import { join } from 'path'
@@ -175,90 +168,19 @@ export class SmallTalkStack extends Stack {
       }),
     )
 
-    const connection = new Connection(this, `${this.id}-connection`, {
-      description: 'Connection to OpenWeatherMap API',
-      connectionName: `${this.id}`,
-      authorization: Authorization.apiKey(
-        'smalltalk-authorization',
-        SecretValue.secretsManager('smalltalk-weather'),
-      ),
-      queryStringParameters: {
-        appid: HttpParameter.fromSecret(
-          SecretValue.secretsManager('smalltalk-weather'),
-        ),
-      },
-    })
-
-    const getCords = new HttpInvoke(this, 'Get Coordinates', {
+    const getWeatherBranch = new LambdaInvoke(this, 'Get Weather', {
       queryLanguage: QueryLanguage.JSONATA,
-      apiRoot: `https://api.openweathermap.org`,
-      apiEndpoint: TaskInput.fromText('geo/1.0/direct'),
-      connection,
-      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
-      method: TaskInput.fromText('GET'),
-      queryStringParameters: TaskInput.fromObject({
-        limit: '1',
-        q: '{% $states.input.body.location %}',
-      }),
+      lambdaFunction: weatherFunction,
+      comment: 'Get weather from API calls',
       outputs: {
-        metadata: {
-          lat: '{% $states.result.ResponseBody[0].lat %}',
-          lon: '{% $states.result.ResponseBody[0].lon %}',
-          name: '{% $states.context.Execution.Input.body.location %}',
-        },
+        techNews: '{% $states.result.Payload %}',
       },
+    }).addRetry({
+      maxAttempts: 3,
+      backoffRate: 2,
+      interval: Duration.seconds(2),
+      jitterStrategy: JitterType.FULL,
     })
-      .addRetry({
-        maxAttempts: 3,
-        backoffRate: 2,
-        interval: Duration.seconds(2),
-        jitterStrategy: JitterType.FULL,
-      })
-      .addCatch(new Pass(this, 'Handle Get Coordinates Failure'), {
-        outputs: {
-          metadata: {
-            name: '{% $states.context.Execution.Input.body.location %}',
-          },
-          weather: '{% $states.errorOutput %}',
-        },
-      })
-
-    const getWeather = new HttpInvoke(this, 'Get Weather', {
-      queryLanguage: QueryLanguage.JSONATA,
-      apiRoot: `https://api.openweathermap.org`,
-      apiEndpoint: TaskInput.fromText('data/3.0/onecall'),
-      connection,
-      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
-      method: TaskInput.fromText('GET'),
-      queryStringParameters: TaskInput.fromObject({
-        units: 'imperial',
-        exclude: 'minutely,hourly,daily,alerts',
-        lat: '{% $states.input.metadata.lat %}',
-        lon: '{% $states.input.metadata.lon %}',
-      }),
-      outputs: {
-        metadata: '{% $states.input.metadata %}',
-        weather: {
-          statusCode: '{% $states.result.StatusCode %}',
-          statusText: '{% $states.result.StatusText %}',
-          result: '{% $states.result.ResponseBody.current %}',
-        },
-      },
-    })
-      .addRetry({
-        maxAttempts: 3,
-        backoffRate: 2,
-        interval: Duration.seconds(2),
-        jitterStrategy: JitterType.FULL,
-      })
-      .addCatch(new Pass(this, 'Handle Get Weather Failure'), {
-        outputs: {
-          metadata: '{% $states.input.metadata %}',
-          weather: '{% $states.errorOutput %}',
-        },
-      })
-
-    const getWeatherBranch = getCords.next(getWeather)
 
     // Step Function definition
     const parallel = new Parallel(this, 'Parallel')
