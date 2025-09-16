@@ -11,8 +11,12 @@
 - **API Gateway** - REST API endpoint with API key authentication
 - **Step Functions** - Express workflows for parallel data fetching that uses JSONata
 - **Lambda** - Serverless compute for Hacker News scraping
-- **Secrets Manager** - Secure storage for OpenWeather API key
+- **Secrets Manager** - Secure storage for OpenWeather API key and Momento API key
 - **CloudWatch Logs** - Centralized logging with 1-week retention
+
+## External Services
+
+- **Momento** - Serverless caching for improved performance and reduced API calls
 
 ## Development Tools
 
@@ -69,6 +73,15 @@ npm run clean:tsc    # Clean TypeScript output
 - **API-first design** - REST API with proper authentication and rate limiting
 - **Security** - API keys stored in Secrets Manager, never in code
 - **Cost optimization** - ARM64 Lambda architecture, Express Step Functions
+- **Performance caching** - Momento cache reduces external API calls and improves response times
+
+## Caching Strategy
+
+- **Weather data**: 15-minute TTL using location as cache key
+- **Tech news**: 5-minute TTL using "top-stories" as cache key
+- **Cache name**: "small-talk" for all cached data
+- **Graceful degradation**: Cache failures don't block API responses
+- **Shared utilities**: Common caching functions in `functions/shared/utils.py`
 
 ## API Specifications
 

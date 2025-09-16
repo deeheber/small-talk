@@ -4,8 +4,8 @@ Small Talk Generator is a serverless tool that creates conversation starters for
 
 ## Core Features
 
-1. **Weather Information** ☀️ - Current local conditions via OpenWeather API
-2. **Tech News** 📰 - Top 5 trending stories from Hacker News
+1. **Weather Information** ☀️ - Current local conditions via OpenWeather API (cached for 15 minutes)
+2. **Tech News** 📰 - Top 5 trending stories from Hacker News (cached for 5 minutes)
 
 ## Target Users
 
@@ -20,6 +20,7 @@ Small Talk Generator is a serverless tool that creates conversation starters for
 - Input: `{"location": "City, State, Country"}`
 - Output: Combined weather + news data for conversation starters
 - Imperial units (Fahrenheit, miles) for US audiences
+- Intelligent caching reduces response times and external API costs
 
 ## Future Channels
 
