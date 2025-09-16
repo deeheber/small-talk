@@ -26,7 +26,6 @@ import {
   StateMachineType,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
-// import { execSync } from 'child_process'
 import { Construct } from 'constructs'
 import { join } from 'path'
 
@@ -64,7 +63,7 @@ export class SmallTalkStack extends Stack {
       handler: 'app.handler',
       logGroup: hackerNewsFunctionLog,
       timeout: Duration.seconds(15),
-      memorySize: 256,
+      memorySize: 512,
       code: Code.fromAsset(functionsDir, {
         exclude: ['weather/**'],
         bundling: {
@@ -119,7 +118,7 @@ export class SmallTalkStack extends Stack {
       handler: 'app.handler',
       logGroup: weatherFunctionLog,
       timeout: Duration.seconds(15),
-      memorySize: 256,
+      memorySize: 512,
       code: Code.fromAsset(functionsDir, {
         exclude: ['hacker-news/**'],
         bundling: {
