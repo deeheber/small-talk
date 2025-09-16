@@ -19,8 +19,9 @@ Got ideas for more channels? [Open an issue](https://github.com/deeheber/small-t
 ## Architecture
 
 ### Step Function Workflow Diagram
+<img width="631" height="577" alt="Screenshot 2025-09-15 at 9 03 03 PM" src="https://github.com/user-attachments/assets/5b90e7d6-37ec-4381-9feb-29971f71962e" />
 
-<img width="537" alt="small-talk-asl" src="https://github.com/deeheber/small-talk/assets/12616554/fff34b51-e832-4f1d-835b-046f4c7eb4eb">
+
 
 ### Caching Strategy
 
