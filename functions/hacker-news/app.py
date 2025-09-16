@@ -3,80 +3,11 @@ import logging
 import os
 import requests
 from bs4 import BeautifulSoup
-import boto3
-from botocore.exceptions import ClientError
-from datetime import timedelta
-from momento import CacheClient, Configurations, CredentialProvider
-from momento.responses import CacheGet, CacheSet
+# See bundling code
+from utils import get_secret, create_momento_client, get_from_cache, set_in_cache
 
 logger = logging.getLogger()
 logger.setLevel("INFO")
-
-cached_secret = None
-
-def get_secret(secret_name):
-    global cached_secret
-    if cached_secret is not None:
-        logger.info("Returning cached secret")
-        return cached_secret
-
-    client = boto3.client(service_name="secretsmanager", region_name=os.environ["AWS_REGION"])
-    try:
-        response = client.get_secret_value(SecretId=secret_name)
-        return response["SecretString"]
-    except ClientError as e:
-        raise e
-
-def create_momento_client():
-    try:
-        # Get Momento API key from AWS Secrets Manager
-        momento_secret = get_secret("momento-api-key")
-        momento_auth_token = CredentialProvider.from_string(momento_secret)
-
-        ttl = timedelta(seconds=int("300"))  # 5 minutes
-        config = {
-            "configuration": Configurations.Lambda.latest(),
-            "credential_provider": momento_auth_token,
-            "default_ttl": ttl
-        }
-        return CacheClient.create(**config)
-    except Exception as e:
-        logger.error(f"Failed to create Momento client: {e}")
-        return None
-
-def get_from_cache(client, cache_name, key):
-    if client is None:
-        return None
-
-    try:
-        resp = client.get(cache_name, key)
-        match resp:
-            case CacheGet.Hit():
-                return json.loads(resp.value_string)
-            case CacheGet.Miss():
-                return None
-            case _:
-                logger.error("Unexpected cache get response")
-                return None
-    except Exception as e:
-        logger.error(f"Error getting from cache: {e}")
-        return None
-
-def set_in_cache(client, cache_name, key, value):
-    if client is None:
-        return
-
-    try:
-        resp = client.set(cache_name, key, json.dumps(value))
-        match resp:
-            case CacheSet.Success():
-                logger.info(f"Successfully cached data for key: {key}")
-            case CacheSet.Error() as error:
-                logger.error(f"Error setting cache value: {error.message}")
-            case _:
-                logger.error("Unexpected cache set response")
-    except Exception as e:
-        logger.error(f"Error setting cache: {e}")
 
 def handler(event, context):
     cache_name = "small-talk"
@@ -85,7 +16,7 @@ def handler(event, context):
     try:
         logger.info("Received event: " + json.dumps(event, indent=2))
 
-        momento_client = create_momento_client()
+        momento_client = create_momento_client(ttl_seconds=300)  # 5 minutes
 
         # Try to get news from cache first
         cached_articles = get_from_cache(momento_client, cache_name, cache_key)

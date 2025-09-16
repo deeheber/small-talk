@@ -45,7 +45,7 @@ export class SmallTalkStack extends Stack {
   private createStateMachine() {
     // Hacker news branch resources
     const hackerNewsFunctionName = `${this.id}-hackerNewsFunction`
-    const hackerNewsFunctionDir = join(__dirname, '../functions/hacker-news')
+    const functionsDir = join(__dirname, '../functions')
     const hackerNewsFunctionLog = new LogGroup(
       this,
       `${hackerNewsFunctionName}-log`,
@@ -65,33 +65,15 @@ export class SmallTalkStack extends Stack {
       logGroup: hackerNewsFunctionLog,
       timeout: Duration.seconds(15),
       memorySize: 256,
-      code: Code.fromAsset(hackerNewsFunctionDir, {
+      code: Code.fromAsset(functionsDir, {
+        exclude: ['weather/**'],
         bundling: {
           image: Runtime.PYTHON_3_13.bundlingImage,
           command: [
             'bash',
             '-c',
-            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+            'pip3 install -r hacker-news/requirements.txt -t /asset-output && pip3 install -r shared/requirements.txt -t /asset-output && cp -au hacker-news/* /asset-output && cp -au shared/* /asset-output/',
           ],
-          // Need to bundle in Docker if ARM chip or Momento executable will not work
-          // local: {
-          //   tryBundle(outputDir: string) {
-          //     try {
-          //       execSync('pip3 --version')
-          //     } catch {
-          //       return false
-          //     }
-
-          //     execSync(
-          //       `pip3 install -r ${join(
-          //         hackerNewsFunctionDir,
-          //         'requirements.txt',
-          //       )} -t ${join(outputDir)}`,
-          //     )
-          //     execSync(`cp -r ${hackerNewsFunctionDir}/* ${join(outputDir)}`)
-          //     return true
-          //   },
-          // },
         },
       }),
     })
@@ -120,7 +102,6 @@ export class SmallTalkStack extends Stack {
 
     // Weather branch resources
     const weatherFunctionName = `${this.id}-weatherFunction`
-    const weatherFunctionDir = join(__dirname, '../functions/weather')
     const weatherFunctionLog = new LogGroup(
       this,
       `${weatherFunctionName}-log`,
@@ -139,33 +120,15 @@ export class SmallTalkStack extends Stack {
       logGroup: weatherFunctionLog,
       timeout: Duration.seconds(15),
       memorySize: 256,
-      code: Code.fromAsset(weatherFunctionDir, {
+      code: Code.fromAsset(functionsDir, {
+        exclude: ['hacker-news/**'],
         bundling: {
           image: Runtime.PYTHON_3_13.bundlingImage,
           command: [
             'bash',
             '-c',
-            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+            'pip3 install -r weather/requirements.txt -t /asset-output && pip3 install -r shared/requirements.txt -t /asset-output && cp -au weather/* /asset-output && cp -au shared/* /asset-output/',
           ],
-          // Need to bundle in Docker if ARM chip or Momento executable will not work
-          // local: {
-          //   tryBundle(outputDir: string) {
-          //     try {
-          //       execSync('pip3 --version')
-          //     } catch {
-          //       return false
-          //     }
-
-          //     execSync(
-          //       `pip3 install -r ${join(
-          //         weatherFunctionDir,
-          //         'requirements.txt',
-          //       )} -t ${join(outputDir)}`,
-          //     )
-          //     execSync(`cp -r ${weatherFunctionDir}/* ${join(outputDir)}`)
-          //     return true
-          //   },
-          // },
         },
       }),
     })
