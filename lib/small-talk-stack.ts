@@ -2,7 +2,6 @@ import {
   CfnOutput,
   Duration,
   RemovalPolicy,
-  SecretValue,
   Stack,
   StackProps,
 } from 'aws-cdk-lib'
@@ -12,11 +11,7 @@ import {
   StepFunctionsIntegration,
   UsagePlan,
 } from 'aws-cdk-lib/aws-apigateway'
-import {
-  Authorization,
-  Connection,
-  HttpParameter,
-} from 'aws-cdk-lib/aws-events'
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam'
 import { Architecture, Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda'
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs'
 import {
@@ -29,10 +24,9 @@ import {
   QueryLanguage,
   StateMachine,
   StateMachineType,
-  TaskInput,
 } from 'aws-cdk-lib/aws-stepfunctions'
-import { HttpInvoke, LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
-import { execSync } from 'child_process'
+import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
+// import { execSync } from 'child_process'
 import { Construct } from 'constructs'
 import { join } from 'path'
 
@@ -51,7 +45,7 @@ export class SmallTalkStack extends Stack {
   private createStateMachine() {
     // Hacker news branch resources
     const hackerNewsFunctionName = `${this.id}-hackerNewsFunction`
-    const hackerNewsFunctionDir = join(__dirname, '../functions/hacker-news')
+    const functionsDir = join(__dirname, '../functions')
     const hackerNewsFunctionLog = new LogGroup(
       this,
       `${hackerNewsFunctionName}-log`,
@@ -69,37 +63,28 @@ export class SmallTalkStack extends Stack {
       runtime: Runtime.PYTHON_3_13,
       handler: 'app.handler',
       logGroup: hackerNewsFunctionLog,
-      timeout: Duration.seconds(10),
-      memorySize: 3008,
-      code: Code.fromAsset(hackerNewsFunctionDir, {
+      timeout: Duration.seconds(15),
+      memorySize: 256,
+      code: Code.fromAsset(functionsDir, {
+        exclude: ['weather/**'],
         bundling: {
           image: Runtime.PYTHON_3_13.bundlingImage,
           command: [
             'bash',
             '-c',
-            'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
+            'pip3 install -r hacker-news/requirements.txt -t /asset-output && pip3 install -r shared/requirements.txt -t /asset-output && cp -au hacker-news/* /asset-output && cp -au shared/* /asset-output/',
           ],
-          local: {
-            tryBundle(outputDir: string) {
-              try {
-                execSync('pip3 --version')
-              } catch {
-                return false
-              }
-
-              execSync(
-                `pip3 install -r ${join(
-                  hackerNewsFunctionDir,
-                  'requirements.txt',
-                )} -t ${join(outputDir)}`,
-              )
-              execSync(`cp -r ${hackerNewsFunctionDir}/* ${join(outputDir)}`)
-              return true
-            },
-          },
         },
       }),
     })
+    hackerNewsFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:momento-api-key*`,
+        ],
+      }),
+    )
 
     const getTechNewsBranch = new LambdaInvoke(this, 'Get Tech News', {
       queryLanguage: QueryLanguage.JSONATA,
@@ -116,90 +101,67 @@ export class SmallTalkStack extends Stack {
     })
 
     // Weather branch resources
-    const connection = new Connection(this, `${this.id}-connection`, {
-      description: 'Connection to OpenWeatherMap API',
-      connectionName: `${this.id}`,
-      authorization: Authorization.apiKey(
-        'smalltalk-authorization',
-        SecretValue.secretsManager('smalltalk-weather'),
-      ),
-      queryStringParameters: {
-        appid: HttpParameter.fromSecret(
-          SecretValue.secretsManager('smalltalk-weather'),
-        ),
+    const weatherFunctionName = `${this.id}-weatherFunction`
+    const weatherFunctionLog = new LogGroup(
+      this,
+      `${weatherFunctionName}-log`,
+      {
+        logGroupName: weatherFunctionName,
+        retention: RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
       },
-    })
-
-    const getCords = new HttpInvoke(this, 'Get Coordinates', {
-      queryLanguage: QueryLanguage.JSONATA,
-      apiRoot: `https://api.openweathermap.org`,
-      apiEndpoint: TaskInput.fromText('geo/1.0/direct'),
-      connection,
-      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
-      method: TaskInput.fromText('GET'),
-      queryStringParameters: TaskInput.fromObject({
-        limit: '1',
-        q: '{% $states.input.body.location %}',
+    )
+    const weatherFunction = new Function(this, weatherFunctionName, {
+      description: 'Get weather data from an API for the small talk app',
+      architecture: Architecture.ARM_64,
+      functionName: weatherFunctionName,
+      runtime: Runtime.PYTHON_3_13,
+      handler: 'app.handler',
+      logGroup: weatherFunctionLog,
+      timeout: Duration.seconds(15),
+      memorySize: 256,
+      code: Code.fromAsset(functionsDir, {
+        exclude: ['hacker-news/**'],
+        bundling: {
+          image: Runtime.PYTHON_3_13.bundlingImage,
+          command: [
+            'bash',
+            '-c',
+            'pip3 install -r weather/requirements.txt -t /asset-output && pip3 install -r shared/requirements.txt -t /asset-output && cp -au weather/* /asset-output && cp -au shared/* /asset-output/',
+          ],
+        },
       }),
-      outputs: {
-        metadata: {
-          lat: '{% $states.result.ResponseBody[0].lat %}',
-          lon: '{% $states.result.ResponseBody[0].lon %}',
-          name: '{% $states.context.Execution.Input.body.location %}',
-        },
-      },
     })
-      .addRetry({
-        maxAttempts: 3,
-        backoffRate: 2,
-        interval: Duration.seconds(2),
-        jitterStrategy: JitterType.FULL,
-      })
-      .addCatch(new Pass(this, 'Handle Get Coordinates Failure'), {
-        outputs: {
-          metadata: {
-            name: '{% $states.context.Execution.Input.body.location %}',
-          },
-          weather: '{% $states.errorOutput %}',
-        },
-      })
-
-    const getWeather = new HttpInvoke(this, 'Get Weather', {
-      queryLanguage: QueryLanguage.JSONATA,
-      apiRoot: `https://api.openweathermap.org`,
-      apiEndpoint: TaskInput.fromText('data/3.0/onecall'),
-      connection,
-      headers: TaskInput.fromObject({ 'Content-Type': 'application/json' }),
-      method: TaskInput.fromText('GET'),
-      queryStringParameters: TaskInput.fromObject({
-        units: 'imperial',
-        exclude: 'minutely,hourly,daily,alerts',
-        lat: '{% $states.input.metadata.lat %}',
-        lon: '{% $states.input.metadata.lon %}',
+    weatherFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:smalltalk-weather*`,
+        ],
       }),
-      outputs: {
-        metadata: '{% $states.input.metadata %}',
-        weather: {
-          statusCode: '{% $states.result.StatusCode %}',
-          statusText: '{% $states.result.StatusText %}',
-          result: '{% $states.result.ResponseBody.current %}',
-        },
-      },
-    })
-      .addRetry({
-        maxAttempts: 3,
-        backoffRate: 2,
-        interval: Duration.seconds(2),
-        jitterStrategy: JitterType.FULL,
-      })
-      .addCatch(new Pass(this, 'Handle Get Weather Failure'), {
-        outputs: {
-          metadata: '{% $states.input.metadata %}',
-          weather: '{% $states.errorOutput %}',
-        },
-      })
+    )
+    weatherFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:momento-api-key*`,
+        ],
+      }),
+    )
 
-    const getWeatherBranch = getCords.next(getWeather)
+    const getWeatherBranch = new LambdaInvoke(this, 'Get Weather', {
+      queryLanguage: QueryLanguage.JSONATA,
+      lambdaFunction: weatherFunction,
+      comment: 'Get weather from API calls',
+      outputs: {
+        weather: '{% $states.result.Payload %}',
+      },
+    }).addRetry({
+      maxAttempts: 3,
+      backoffRate: 2,
+      interval: Duration.seconds(2),
+      jitterStrategy: JitterType.FULL,
+    })
 
     // Step Function definition
     const parallel = new Parallel(this, 'Parallel')

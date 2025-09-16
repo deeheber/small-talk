@@ -5,6 +5,7 @@ node_modules
 dist
 .env
 .venv
+__pycache__
 
 # CDK asset staging directory
 .cdk.staging

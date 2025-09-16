@@ -4,8 +4,8 @@ Generate conversation starters when small talk doesn't come naturally. Perfect f
 
 ## What You Get
 
-- **Current Weather** ☀️ - Local conditions via [OpenWeather API](https://openweathermap.org/api)
-- **Tech News** 📰 - Top 5 stories from [Hacker News](https://news.ycombinator.com/)
+- **Current Weather** ☀️ - Local conditions via [OpenWeather API](https://openweathermap.org/api) (cached 15 min)
+- **Tech News** 📰 - Top 5 stories from [Hacker News](https://news.ycombinator.com/) (cached 5 min)
 
 Got ideas for more channels? [Open an issue](https://github.com/deeheber/small-talk/issues) and let us know!
 
@@ -13,13 +13,23 @@ Got ideas for more channels? [Open an issue](https://github.com/deeheber/small-t
 
 **Backend:** TypeScript/Node.js, Python, AWS CDK  
 **AWS Services:** API Gateway, Step Functions, Lambda, Secrets Manager  
+**Caching:** Momento for improved performance and reduced API costs  
 **Frontend:** Coming soon (HTMX or React)
 
 ## Architecture
 
 ### Step Function Workflow Diagram
 
-<img width="537" alt="small-talk-asl" src="https://github.com/deeheber/small-talk/assets/12616554/fff34b51-e832-4f1d-835b-046f4c7eb4eb">
+<img width="631" height="577" alt="Screenshot 2025-09-15 at 9 03 03 PM" src="https://github.com/user-attachments/assets/5b90e7d6-37ec-4381-9feb-29971f71962e" />
+
+### Caching Strategy
+
+The app uses [Momento](https://www.gomomento.com/) for intelligent caching to improve performance and reduce costs:
+
+- **Weather data**: Cached for 15 minutes per location
+- **Tech news**: Cached for 5 minutes globally
+- **Benefits**: Faster responses, reduced external API calls, lower costs
+- **Resilience**: Cache failures don't break the API - fresh data is fetched as fallback
 
 ## Roadmap
 
@@ -32,6 +42,7 @@ Track progress and upcoming features on [the project board](https://github.com/u
 - Node.js installed
 - AWS account with [CLI configured](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html)
 - [OpenWeather API key](https://openweathermap.org/api) (free tier available)
+- [Momento API key](https://console.gomomento.com/) (free tier available)
 
 ### Deploy to AWS
 
@@ -39,7 +50,10 @@ Track progress and upcoming features on [the project board](https://github.com/u
 
    ```bash
    # Store your OpenWeather API key in AWS Secrets Manager
-   aws secretsmanager create-secret --name smalltalk-weather --secret-string "your-api-key-here"
+   aws secretsmanager create-secret --name smalltalk-weather --secret-string "your-openweather-api-key-here"
+
+   # Store your Momento API key in AWS Secrets Manager
+   aws secretsmanager create-secret --name momento-api-key --secret-string "your-momento-api-key-here"
    ```
 
 2. **Deploy the app**

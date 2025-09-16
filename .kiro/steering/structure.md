@@ -36,6 +36,7 @@
 - Contains `app.py` (handler) and `requirements.txt`
 - Python functions use ARM64 architecture for cost optimization
 - Bundling handled automatically by CDK
+- Shared utilities in `functions/shared/` for caching and secrets management
 
 ### Testing (`test/`)
 
@@ -53,11 +54,12 @@
 
 ## Configuration Management
 
-- **Secrets**: AWS Secrets Manager for API keys (`smalltalk-weather`)
+- **Secrets**: AWS Secrets Manager for API keys (`smalltalk-weather`, `momento-api-key`)
 - **Environment**: CDK context for environment-specific values
 - **Feature flags**: CDK feature flags in `cdk.json` context
 - **Security**: No sensitive data in code or version control
 - **Deployment**: Stack outputs provide API endpoints and key IDs
+- **Caching**: Momento cache configuration handled via shared utilities
 
 ## Documentation Standards
 
