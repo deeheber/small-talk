@@ -26,7 +26,7 @@ import {
   StateMachineType,
 } from 'aws-cdk-lib/aws-stepfunctions'
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks'
-import { execSync } from 'child_process'
+// import { execSync } from 'child_process'
 import { Construct } from 'constructs'
 import { join } from 'path'
 
@@ -147,24 +147,25 @@ export class SmallTalkStack extends Stack {
             '-c',
             'pip3 install -r requirements.txt -t /asset-output && cp -au . /asset-output',
           ],
-          local: {
-            tryBundle(outputDir: string) {
-              try {
-                execSync('pip3 --version')
-              } catch {
-                return false
-              }
+          // Need to bundle in Docker if ARM chip or Momento executable will not work
+          // local: {
+          //   tryBundle(outputDir: string) {
+          //     try {
+          //       execSync('pip3 --version')
+          //     } catch {
+          //       return false
+          //     }
 
-              execSync(
-                `pip3 install -r ${join(
-                  weatherFunctionDir,
-                  'requirements.txt',
-                )} -t ${join(outputDir)}`,
-              )
-              execSync(`cp -r ${weatherFunctionDir}/* ${join(outputDir)}`)
-              return true
-            },
-          },
+          //     execSync(
+          //       `pip3 install -r ${join(
+          //         weatherFunctionDir,
+          //         'requirements.txt',
+          //       )} -t ${join(outputDir)}`,
+          //     )
+          //     execSync(`cp -r ${weatherFunctionDir}/* ${join(outputDir)}`)
+          //     return true
+          //   },
+          // },
         },
       }),
     })
@@ -176,13 +177,21 @@ export class SmallTalkStack extends Stack {
         ],
       }),
     )
+    weatherFunction.addToRolePolicy(
+      new PolicyStatement({
+        actions: ['secretsmanager:GetSecretValue'],
+        resources: [
+          `arn:aws:secretsmanager:${this.region}:${this.account}:secret:momento-api-key*`,
+        ],
+      }),
+    )
 
     const getWeatherBranch = new LambdaInvoke(this, 'Get Weather', {
       queryLanguage: QueryLanguage.JSONATA,
       lambdaFunction: weatherFunction,
       comment: 'Get weather from API calls',
       outputs: {
-        techNews: '{% $states.result.Payload %}',
+        weather: '{% $states.result.Payload %}',
       },
     }).addRetry({
       maxAttempts: 3,
